@@ -249,6 +249,7 @@ do_dynamic_children(normal, Config) ->
      query_node_spec(Config),
      saslauthd_port_spec(Config),
      goxdcr_spec(Config),
+     sync_gateway_spec(Config),
      per_bucket_moxi_specs(Config),
      fts_spec(Config),
      eventing_spec(Config),
@@ -533,6 +534,26 @@ memcached_spec() ->
       port_server_dont_start,
       stream]
     }.
+
+
+
+sync_gateway_spec(Config) ->
+    ?log_info("info: sync_gateway_spec", []),
+    ?log_error("err: sync_gateway_spec", []),
+    case find_executable("sync_gateway") of
+        false ->
+            ?log_info("sync_gateway_spec returning empty list", []),
+            [];
+        Cmd ->
+            create_sync_gateway_spec(Config, Cmd)
+    end.
+
+create_sync_gateway_spec(Config, Cmd) ->
+    Args = [],
+    [{sync_gateway, Cmd, Args,
+      [via_goport, exit_status, stderr_to_stdout,
+       {log, ?SYNC_GATEWAY_LOG_FILENAME},
+       {env, build_go_env_vars(Config, sync_gateway)}]}].
 
 fts_spec(Config) ->
     FtCmd = find_executable("cbft"),
