@@ -427,12 +427,18 @@ do_handle_eject_post(Req, OtpNode) ->
 
 validate_setup_services_post(Req) ->
     Params = mochiweb_request:parse_post(Req),
-    case ns_config_auth:is_system_provisioned() of
+    ?log_debug("validate_setup_services_post Params: ~p", Params),
+
+  case ns_config_auth:is_system_provisioned() of
         true ->
             {error, <<"cannot change node services after cluster is provisioned">>};
         _ ->
             ServicesString = proplists:get_value("services", Params, ""),
-            case parse_validate_services_list(ServicesString) of
+            ?log_debug("validate_setup_services_post ServicesString: ~p", [ServicesString]),
+            ServicesStringWithMobile = ServicesString ++ ",mobile_mds",
+            ?log_debug("validate_setup_services_post ServicesStringWithMobile: ~p", [ServicesStringWithMobile]),
+
+          case parse_validate_services_list(ServicesStringWithMobile) of
                 {ok, Svcs} ->
                     case lists:member(kv, Svcs) of
                         true ->
@@ -498,6 +504,8 @@ handle_setup_services_post(Req) ->
         {error, Error} ->
             reply_json(Req, [Error], 400);
         {ok, Services} ->
+            ?log_debug("handle_setup_services_post calling setup_node_services with: ~p", [Services]),
+            % todo: add mobile_mds service here?
             ns_config:set({node, node(), services}, Services),
             ns_audit:setup_node_services(Req, node(), Services),
             reply(Req, 200)
@@ -569,13 +577,16 @@ do_handle_add_node(Req, GroupUUID) ->
             Hostname = proplists:get_value(host, KV),
             Port = proplists:get_value(port, KV),
             Services = proplists:get_value(services, KV),
+            ?log_debug("validate_setup_services_post ServicesString: ~p", [Services]),
+            ServicesWithMobile = Services ++ [mobile_mds],
+            ?log_debug("validate_setup_services_post ServicesWithMobile: ~p", [ServicesWithMobile]),
             case ns_cluster:add_node_to_group(
                    Hostname, Port,
                    {User, Password},
                    GroupUUID,
-                   Services) of
+                   ServicesWithMobile) of
                 {ok, OtpNode} ->
-                    ns_audit:add_node(Req, Hostname, Port, User, GroupUUID, Services, OtpNode),
+                    ns_audit:add_node(Req, Hostname, Port, User, GroupUUID, ServicesWithMobile, OtpNode),
                     reply_json(Req, {struct, [{otpNode, OtpNode}]}, 200);
                 {error, unknown_group, Message, _} ->
                     reply_json(Req, [Message], 404);
