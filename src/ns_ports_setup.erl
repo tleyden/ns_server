@@ -250,6 +250,7 @@ do_dynamic_children(normal, Config) ->
      saslauthd_port_spec(Config),
      goxdcr_spec(Config),
      sync_gateway_spec(Config),
+     mobile_mds_spec(Config),
      per_bucket_moxi_specs(Config),
      fts_spec(Config),
      eventing_spec(Config),
@@ -331,6 +332,7 @@ kv_node_projector_spec(Config) ->
     end.
 
 goxdcr_spec(Config) ->
+
     case find_executable("goxdcr") of
         false ->
             [];
@@ -540,6 +542,8 @@ memcached_spec() ->
 sync_gateway_spec(Config) ->
     ?log_info("info: sync_gateway_spec", []),
     ?log_error("err: sync_gateway_spec", []),
+    NsRestPort = misc:node_rest_port(Config, node()),
+    ?log_info("info: local_url: ~s", [misc:local_url(NsRestPort, [])]),
     case find_executable("sync_gateway") of
         false ->
             ?log_info("sync_gateway_spec returning empty list", []),
@@ -554,6 +558,28 @@ create_sync_gateway_spec(Config, Cmd) ->
       [via_goport, exit_status, stderr_to_stdout,
        {log, ?SYNC_GATEWAY_LOG_FILENAME},
        {env, build_go_env_vars(Config, sync_gateway)}]}].
+
+
+mobile_mds_spec(Config) ->
+    ?log_info("info: mobile_mds_spec", []),
+    ?log_error("err: mobile_mds_spec", []),
+    NsRestPort = misc:node_rest_port(Config, node()),
+    ?log_info("info: local_url: ~s", [misc:local_url(NsRestPort, [])]),
+    case find_executable("mobile-mds") of
+        false ->
+            ?log_info("mobile_mds_spec returning empty list", []),
+            [];
+        Cmd ->
+            create_mobile_mds_spec(Config, Cmd)
+    end.
+
+create_mobile_mds_spec(Config, Cmd) ->
+    Args = [],
+    [{mobile_mds, Cmd, Args,
+      [via_goport, exit_status, stderr_to_stdout,
+       {log, ?MOBILE_MDS_LOG_FILENAME},
+       {env, build_go_env_vars(Config, mobile_mds)}]}].
+
 
 fts_spec(Config) ->
     FtCmd = find_executable("cbft"),

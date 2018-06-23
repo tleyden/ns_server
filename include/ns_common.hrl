@@ -75,6 +75,7 @@
 -define(INT_ACCESS_LOG_FILENAME, "http_access_internal.log").
 -define(GOXDCR_LOG_FILENAME, "goxdcr.log").
 -define(SYNC_GATEWAY_LOG_FILENAME, "non_existent_sync_gateway.log").
+-define(MOBILE_MDS_LOG_FILENAME, "non_existent_mobile_mds.log").
 -define(QUERY_LOG_FILENAME, "query.log").
 -define(PROJECTOR_LOG_FILENAME, "projector.log").
 -define(INDEXER_LOG_FILENAME, "indexer.log").
