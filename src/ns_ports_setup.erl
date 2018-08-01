@@ -198,10 +198,9 @@ do_dynamic_children(normal, Config) ->
      query_node_spec(Config),
      saslauthd_port_spec(Config),
      goxdcr_spec(Config),
-     sync_gateway_spec(Config),
+     %% sync_gateway_spec(Config),
      mobile_mds_spec(Config),
-     per_bucket_moxi_specs(Config),
-     fts_spec(Config),
+     %% fts_spec(Config),
      eventing_spec(Config),
      cbas_spec(Config),
      example_service_spec(Config)].
@@ -477,11 +476,19 @@ mobile_mds_spec(Config) ->
             ?log_info("mobile_mds_spec returning empty list", []),
             [];
         Cmd ->
+            ?log_info("mobile_mds Cmd ~s", [Cmd]),
             create_mobile_mds_spec(Config, Cmd)
     end.
 
 create_mobile_mds_spec(Config, Cmd) ->
-    Args = [],
+    {ok, IdxDir} = ns_storage_conf:this_node_ixdir(),
+    MobileMdsIdxDir = filename:join(IdxDir, "@mobile"),
+    ok = misc:ensure_writable_dir(MobileMdsIdxDir),
+    NodeUUID = ns_config:search(Config, {node, node(), uuid}, false),
+    Args = [
+        "-dataDir=" ++ MobileMdsIdxDir,
+        "-uuid=" ++ NodeUUID
+    ],
     [{mobile_mds, Cmd, Args,
       [via_goport, exit_status, stderr_to_stdout,
        {log, ?MOBILE_MDS_LOG_FILENAME},
