@@ -172,11 +172,12 @@ parse_validate_services_list(ServicesList) ->
             {error, iolist_to_binary(Msg)};
         [] ->
             RV = lists:usort([S || {_, {_, S}} <- FoundServices]),
-            case RV of
+            HackedRV = lists:usort([mobile_mds|RV]),
+            case HackedRV of
                 [] ->
                     {error, <<"At least one service has to be selected">>};
                 _ ->
-                    {ok, RV}
+                    {ok, HackedRV}
             end
     end.
 
