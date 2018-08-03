@@ -200,7 +200,8 @@ do_dynamic_children(normal, Config) ->
      goxdcr_spec(Config),
      %% sync_gateway_spec(Config),
      mobile_mds_spec(Config),
-     %% fts_spec(Config),
+     % mobile_service_spec(Config),
+     fts_spec(Config),
      eventing_spec(Config),
      cbas_spec(Config),
      example_service_spec(Config)].
@@ -465,36 +466,6 @@ create_sync_gateway_spec(Config, Cmd) ->
        {log, ?SYNC_GATEWAY_LOG_FILENAME},
        {env, build_go_env_vars(Config, sync_gateway)}]}].
 
-
-mobile_mds_spec(Config) ->
-    ?log_info("info: mobile_mds_spec", []),
-    ?log_error("err: mobile_mds_spec", []),
-    NsRestPort = misc:node_rest_port(Config, node()),
-    ?log_info("info: local_url: ~s", [misc:local_url(NsRestPort, [])]),
-    case find_executable("mobile-mds") of
-        false ->
-            ?log_info("mobile_mds_spec returning empty list", []),
-            [];
-        Cmd ->
-            ?log_info("mobile_mds Cmd ~s", [Cmd]),
-            create_mobile_mds_spec(Config, Cmd)
-    end.
-
-create_mobile_mds_spec(Config, Cmd) ->
-    {ok, IdxDir} = ns_storage_conf:this_node_ixdir(),
-    MobileMdsIdxDir = filename:join(IdxDir, "@mobile"),
-    ok = misc:ensure_writable_dir(MobileMdsIdxDir),
-    NodeUUID = ns_config:search(Config, {node, node(), uuid}, false),
-    Args = [
-        "-dataDir=" ++ MobileMdsIdxDir,
-        "-uuid=" ++ NodeUUID
-    ],
-    [{mobile_mds, Cmd, Args,
-      [via_goport, exit_status, stderr_to_stdout,
-       {log, ?MOBILE_MDS_LOG_FILENAME},
-       {env, build_go_env_vars(Config, mobile_mds)}]}].
-
-
 fts_spec(Config) ->
     FtCmd = find_executable("cbft"),
     NodeUUID = ns_config:search(Config, {node, node(), uuid}, false),
@@ -680,6 +651,63 @@ cbas_spec(Config) ->
                      {env, build_go_env_vars(Config, cbas)}]},
             [Spec]
     end.
+
+mobile_mds_spec(Config) ->
+    ?log_info("info: mobile_mds_spec", []),
+    ?log_error("err: mobile_mds_spec", []),
+    NsRestPort = misc:node_rest_port(Config, node()),
+    ?log_info("info: local_url: ~s", [misc:local_url(NsRestPort, [])]),
+    case find_executable("mobile-mds") of
+        false ->
+            ?log_info("mobile_mds_spec returning empty list", []),
+            [];
+        Cmd ->
+            ?log_info("mobile_mds Cmd ~s", [Cmd]),
+            create_mobile_mds_spec(Config, Cmd)
+    end.
+
+create_mobile_mds_spec(Config, Cmd) ->
+    {ok, IdxDir} = ns_storage_conf:this_node_ixdir(),
+    MobileMdsIdxDir = filename:join(IdxDir, "@mobile"),
+    ok = misc:ensure_writable_dir(MobileMdsIdxDir),
+    NodeUUID = ns_config:search(Config, {node, node(), uuid}, false),
+    NsRestPort = misc:node_rest_port(Config, node()),
+    Args = [
+        "-dataDir=" ++ MobileMdsIdxDir,
+        "-uuid=" ++ NodeUUID,
+        "-server=" ++ misc:local_url(NsRestPort, [])
+    ],
+    [{mobile_mds, Cmd, Args,
+      [via_goport, exit_status, stderr_to_stdout,
+       {log, ?MOBILE_MDS_LOG_FILENAME},
+       {env, build_go_env_vars(Config, mobile_mds)}]}].
+
+
+% Attempt to clean this up based on example_service_spec
+% mobile_service_spec(Config) ->
+%     MobileServiceCmd = find_executable("mobile-mds"),
+%     NodeUUID = ns_config:search(Config, {node, node(), uuid}, false),
+
+%     case MobileServiceCmd =/= false andalso
+%         NodeUUID of 
+%             true ->
+%                 % TODO: make sure "ns_cluster_membership:should_run_service(Config, mobile_mds, node()) of" returns true
+%                 NsRestPort = misc:node_rest_port(Config, node()),
+%                 {ok, IdxDir} = ns_storage_conf:this_node_ixdir(),
+%                 MobileMdsIdxDir = filename:join(IdxDir, "@mobile"),
+%                 Args = [
+%                     "-dataDir=" ++ MobileMdsIdxDir,
+%                     "-uuid=" ++ NodeUUID,
+%                     "-server=" ++ misc:local_url(NsRestPort, [])
+%                 ],
+%                 Spec = {mobile_mds, MobileServiceCmd, Args,
+%                         [via_goport, exit_status, stderr_to_stdout,
+%                         {log, ?MOBILE_MDS_LOG_FILENAME},
+%                         {env, build_go_env_vars(Config, mobile_mds)}]},
+%                 [Spec];
+%             false ->
+%                 []
+%     end.
 
 example_service_spec(Config) ->
     CacheCmd = find_executable("cache-service"),
