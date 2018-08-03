@@ -879,12 +879,11 @@ community_allowed_topologies() ->
     [KvOnly, lists:sort(AllServices40), lists:sort(AllServices)].
 
 enforce_topology_limitation(Services) ->
-    HackedServices = [mobile_mds|Services],
     case cluster_compat_mode:is_enterprise() of
         true ->
             ok;
         false ->
-            SortedServices = lists:sort(HackedServices),
+            SortedServices = lists:sort(Services),
             SupportedCombinations = community_allowed_topologies(),
             case lists:member(SortedServices, SupportedCombinations) of
                 true ->
