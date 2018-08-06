@@ -577,13 +577,16 @@ do_handle_add_node(Req, GroupUUID) ->
             Hostname = proplists:get_value(host, KV),
             Port = proplists:get_value(port, KV),
             Services = proplists:get_value(services, KV),
+            ?log_debug("validate_setup_services_post ServicesString: ~p", [Services]),
+            ServicesWithMobile = Services ++ [mobile_mds],
+            ?log_debug("validate_setup_services_post ServicesWithMobile: ~p", [ServicesWithMobile]),
             case ns_cluster:add_node_to_group(
                    Hostname, Port,
                    {User, Password},
                    GroupUUID,
-                   Services) of
+                   ServicesWithMobile) of
                 {ok, OtpNode} ->
-                    ns_audit:add_node(Req, Hostname, Port, User, GroupUUID, Services, OtpNode),
+                    ns_audit:add_node(Req, Hostname, Port, User, GroupUUID, ServicesWithMobile, OtpNode),
                     reply_json(Req, {struct, [{otpNode, OtpNode}]}, 200);
                 {error, unknown_group, Message, _} ->
                     reply_json(Req, [Message], 404);
