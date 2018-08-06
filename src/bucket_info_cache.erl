@@ -172,6 +172,8 @@ build_services(Node, Config, EnabledServices) ->
                          Port ->
                              [{ftsSSL, Port}]
                      end;
+             mobile_mds ->
+               [{mobile_mds, 4986}];
              eventing ->
                  [{eventingAdminPort,
                    ns_config:search(Config, {node, Node, eventing_http_port}, undefined)}] ++

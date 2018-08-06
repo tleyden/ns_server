@@ -885,6 +885,7 @@ enforce_topology_limitation(Services) ->
         false ->
             SortedServices = lists:sort(Services),
             SupportedCombinations = community_allowed_topologies(),
+            ?log_debug("SortedServices: ~p SupportedCombinations ~p", [SortedServices, SupportedCombinations]),
             case lists:member(SortedServices, SupportedCombinations) of
                 true ->
                     ok;

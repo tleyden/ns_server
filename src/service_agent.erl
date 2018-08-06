@@ -346,6 +346,7 @@ handle_lost_connection(State) ->
                 conn_mref = undefined}.
 
 handle_set_rebalancer(Pid, #state{conn = Conn} = State) ->
+    ?log_debug("handle_set_rebalancer setting rebalancer to PID: ~p", [Pid]),
     MRef = erlang:monitor(process, Pid),
     Worker = start_rebalance_worker(),
 
