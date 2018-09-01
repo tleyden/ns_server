@@ -445,7 +445,7 @@ memcached_spec() ->
     }.
 
 
-
+%% Not used -- see mobile_mds_spec code
 sync_gateway_spec(Config) ->
     ?log_info("info: sync_gateway_spec", []),
     ?log_error("err: sync_gateway_spec", []),
@@ -459,6 +459,7 @@ sync_gateway_spec(Config) ->
             create_sync_gateway_spec(Config, Cmd)
     end.
 
+%% Not used -- see mobile_mds_spec code
 create_sync_gateway_spec(Config, Cmd) ->
     Args = [],
     [{sync_gateway, Cmd, Args,
@@ -667,20 +668,45 @@ mobile_mds_spec(Config) ->
     end.
 
 create_mobile_mds_spec(Config, Cmd) ->
+    DelveCmd = path_config:component_path(bin, "dlv"),
     {ok, IdxDir} = ns_storage_conf:this_node_ixdir(),
     MobileMdsIdxDir = filename:join(IdxDir, "@mobile"),
     ok = misc:ensure_writable_dir(MobileMdsIdxDir),
     NodeUUID = ns_config:search(Config, {node, node(), uuid}, false),
     NsRestPort = misc:node_rest_port(Config, node()),
-    Args = [
-        "-dataDir=" ++ MobileMdsIdxDir,
-        "-uuid=" ++ NodeUUID,
-        "-server=" ++ misc:local_url(NsRestPort, [])
-    ],
-    [{mobile_mds, Cmd, Args,
-      [via_goport, exit_status, stderr_to_stdout,
-       {log, ?MOBILE_MDS_LOG_FILENAME},
-       {env, build_go_env_vars(Config, mobile_mds)}]}].
+    case NsRestPort of
+      9001 ->
+        %% Run under the delve debugger via:
+        %% dlv --listen=:2345 --headless=true --api-version=2 exec mobile_mds -- -dataDir=...
+        %% TODO: re-add
+        %% " -- "  %% Avoid error: "Error: bad flag syntax: ---dataDir=...", not sure why this happened
+        %% "-dataDir=" ++ MobileMdsIdxDir,
+        %% "-uuid=" ++ NodeUUID,
+        %% "-server=" ++ misc:local_url(NsRestPort, [])
+        Args = [
+            "--listen=:2345",
+            "--headless=true",
+            "--api-version=2",
+            "exec",
+            Cmd
+        ],
+        io:format("Args:: ~p  Cmd: ~s DlvCmd: ~s~n", [Args, Cmd, DelveCmd]),
+        [{mobile_mds, DelveCmd, Args,
+          [via_goport, exit_status, stderr_to_stdout,
+            {log, ?MOBILE_MDS_LOG_FILENAME},
+            {env, build_go_env_vars(Config, mobile_mds)}]}];
+      _ ->
+        Args = [
+            "-dataDir=" ++ MobileMdsIdxDir,
+            "-uuid=" ++ NodeUUID,
+            "-server=" ++ misc:local_url(NsRestPort, [])
+        ],
+        [{mobile_mds, Cmd, Args,
+          [via_goport, exit_status, stderr_to_stdout,
+            {log, ?MOBILE_MDS_LOG_FILENAME},
+            {env, build_go_env_vars(Config, mobile_mds)}]}]
+    end.
+
 
 
 % Attempt to clean this up based on example_service_spec
