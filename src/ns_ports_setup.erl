@@ -675,20 +675,20 @@ create_mobile_mds_spec(Config, Cmd) ->
     NodeUUID = ns_config:search(Config, {node, node(), uuid}, false),
     NsRestPort = misc:node_rest_port(Config, node()),
     case NsRestPort of
-      9001 ->
+      9000 ->
         %% Run under the delve debugger via:
         %% dlv --listen=:2345 --headless=true --api-version=2 exec mobile_mds -- -dataDir=...
-        %% TODO: re-add
-        %% " -- "  %% Avoid error: "Error: bad flag syntax: ---dataDir=...", not sure why this happened
-        %% "-dataDir=" ++ MobileMdsIdxDir,
-        %% "-uuid=" ++ NodeUUID,
-        %% "-server=" ++ misc:local_url(NsRestPort, [])
+        MobileMdsCmd = path_config:component_path(bin, "mobile-mds"),  %% Using Cmd directly didn't seem to work, this is a workaround
         Args = [
             "--listen=:2345",
             "--headless=true",
             "--api-version=2",
             "exec",
-            Cmd
+            MobileMdsCmd,
+            "--",
+            "-dataDir=" ++ MobileMdsIdxDir,
+            "-uuid=" ++ NodeUUID,
+            "-server=" ++ misc:local_url(NsRestPort, [])
         ],
         io:format("Args:: ~p  Cmd: ~s DlvCmd: ~s~n", [Args, Cmd, DelveCmd]),
         [{mobile_mds, DelveCmd, Args,
