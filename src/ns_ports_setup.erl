@@ -675,7 +675,7 @@ create_mobile_mds_spec(Config, Cmd) ->
     NodeUUID = ns_config:search(Config, {node, node(), uuid}, false),
     NsRestPort = misc:node_rest_port(Config, node()),
     case NsRestPort of
-      9000 ->
+      8999 ->
         %% Run under the delve debugger via:
         %% dlv --listen=:2345 --headless=true --api-version=2 exec mobile_mds -- -dataDir=...
         MobileMdsCmd = path_config:component_path(bin, "mobile-mds"),  %% Using Cmd directly didn't seem to work, this is a workaround
@@ -686,9 +686,9 @@ create_mobile_mds_spec(Config, Cmd) ->
             "exec",
             MobileMdsCmd,
             "--",
-            "-dataDir=" ++ MobileMdsIdxDir,
-            "-uuid=" ++ NodeUUID,
-            "-server=" ++ misc:local_url(NsRestPort, [])
+            "--dataDir " ++ MobileMdsIdxDir,
+            "--uuid " ++ NodeUUID,
+            "--server " ++ misc:local_url(NsRestPort, [])
         ],
         io:format("Args:: ~p  Cmd: ~s DlvCmd: ~s~n", [Args, Cmd, DelveCmd]),
         [{mobile_mds, DelveCmd, Args,
@@ -697,9 +697,9 @@ create_mobile_mds_spec(Config, Cmd) ->
             {env, build_go_env_vars(Config, mobile_mds)}]}];
       _ ->
         Args = [
-            "-dataDir=" ++ MobileMdsIdxDir,
-            "-uuid=" ++ NodeUUID,
-            "-server=" ++ misc:local_url(NsRestPort, [])
+            "--dataDir " ++ MobileMdsIdxDir,
+            "--uuid " ++ NodeUUID,
+            "--server " ++ misc:local_url(NsRestPort, [])
         ],
         [{mobile_mds, Cmd, Args,
           [via_goport, exit_status, stderr_to_stdout,
