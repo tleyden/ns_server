@@ -658,7 +658,7 @@ mobile_mds_spec(Config) ->
     ?log_error("err: mobile_mds_spec", []),
     NsRestPort = misc:node_rest_port(Config, node()),
     ?log_info("info: local_url: ~s", [misc:local_url(NsRestPort, [])]),
-    case find_executable("mobile-mds") of
+    case find_executable("mobile-service") of
         false ->
             ?log_info("mobile_mds_spec returning empty list", []),
             [];
@@ -678,7 +678,7 @@ create_mobile_mds_spec(Config, Cmd) ->
       8999 ->
         %% Run under the delve debugger via:
         %% dlv --listen=:2345 --headless=true --api-version=2 exec mobile_mds -- -dataDir=...
-        MobileMdsCmd = path_config:component_path(bin, "mobile-mds"),  %% Using Cmd directly didn't seem to work, this is a workaround
+        MobileMdsCmd = path_config:component_path(bin, "mobile-service"),  %% Using Cmd directly didn't seem to work, this is a workaround
         Args = [
             "--listen=:2345",
             "--headless=true",
@@ -686,21 +686,22 @@ create_mobile_mds_spec(Config, Cmd) ->
             "exec",
             MobileMdsCmd,
             "--",
-            "--dataDir " ++ MobileMdsIdxDir,
-            "--uuid " ++ NodeUUID,
-            "--server " ++ misc:local_url(NsRestPort, [])
+            "--dataDir=" ++ MobileMdsIdxDir,
+            "--uuid=" ++ NodeUUID,
+            "--server=" ++ misc:local_url(NsRestPort, [])
         ],
-        io:format("Args:: ~p  Cmd: ~s DlvCmd: ~s~n", [Args, Cmd, DelveCmd]),
+        io:format("Mobile-service args: ~p  Cmd: ~s DlvCmd: ~s~n", [Args, Cmd, DelveCmd]),
         [{mobile_mds, DelveCmd, Args,
           [via_goport, exit_status, stderr_to_stdout,
             {log, ?MOBILE_MDS_LOG_FILENAME},
             {env, build_go_env_vars(Config, mobile_mds)}]}];
       _ ->
         Args = [
-            "--dataDir " ++ MobileMdsIdxDir,
-            "--uuid " ++ NodeUUID,
-            "--server " ++ misc:local_url(NsRestPort, [])
+            "--dataDir=" ++ MobileMdsIdxDir,
+            "--uuid=" ++ NodeUUID,
+            "--server=" ++ misc:local_url(NsRestPort, [])
         ],
+        io:format("Mobile-service args: ~p  Cmd: ~s~n", [Args, Cmd]),
         [{mobile_mds, Cmd, Args,
           [via_goport, exit_status, stderr_to_stdout,
             {log, ?MOBILE_MDS_LOG_FILENAME},
