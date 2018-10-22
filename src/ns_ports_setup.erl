@@ -199,6 +199,7 @@ do_dynamic_children(normal, Config) ->
      saslauthd_port_spec(Config),
      goxdcr_spec(Config),
      fts_spec(Config),
+     mobile_service_spec(Config),
      eventing_spec(Config),
      cbas_spec(Config),
      example_service_spec(Config)].
@@ -645,6 +646,54 @@ cbas_spec(Config) ->
                      {env, build_go_env_vars(Config, cbas)}]},
             [Spec]
     end.
+
+mobile_service_spec(Config) ->
+  case find_executable("mobile-service") of
+    false ->
+      [];
+    Cmd ->
+      create_mobile_service_spec(Config, Cmd)
+  end.
+
+create_mobile_service_spec(Config, Cmd) ->
+  DelveCmd = path_config:component_path(bin, "dlv"),
+  {ok, IdxDir} = ns_storage_conf:this_node_ixdir(),
+  MobileMdsIdxDir = filename:join(IdxDir, "@mobile"),
+  ok = misc:ensure_writable_dir(MobileMdsIdxDir),
+  NodeUUID = ns_config:search(Config, {node, node(), uuid}, false),
+  NsRestPort = service_ports:get_port(rest_port, Config),
+  case NsRestPort of
+    9003 ->
+      %% Run under the delve debugger via:
+      %% dlv --listen=:2345 --headless=true --api-version=2 exec mobile_service -- -dataDir=...
+      MobileMdsCmd = path_config:component_path(bin, "mobile-service"),  %% Using Cmd directly didn't seem to work, this is a workaround
+      Args = [
+        "--listen=:2345",
+        "--headless=true",
+        "--api-version=2",
+        "exec",
+        MobileMdsCmd,
+        "--",
+          "--dataDir=" ++ MobileMdsIdxDir,
+          "--uuid=" ++ NodeUUID,
+          "--server=" ++ misc:local_url(NsRestPort, [])
+      ],
+      [{mobile_service, DelveCmd, Args,
+        [via_goport, exit_status, stderr_to_stdout,
+          {log, ?MOBILE_SERVICE_LOG_FILENAME},
+          {env, build_go_env_vars(Config, mobile_service)}]}];
+    _ ->
+      Args = [
+          "--dataDir=" ++ MobileMdsIdxDir,
+          "--uuid=" ++ NodeUUID,
+          "--server=" ++ misc:local_url(NsRestPort, [])
+      ],
+      [{mobile_service, Cmd, Args,
+        [via_goport, exit_status, stderr_to_stdout,
+          {log, ?MOBILE_SERVICE_LOG_FILENAME},
+          {env, build_go_env_vars(Config, mobile_service)}]}]
+  end.
+
 
 example_service_spec(Config) ->
     CacheCmd = find_executable("cache-service"),

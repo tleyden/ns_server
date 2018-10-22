@@ -432,7 +432,10 @@ validate_setup_services_post(Req) ->
             {error, <<"cannot change node services after cluster is provisioned">>};
         _ ->
             ServicesString = proplists:get_value("services", Params, ""),
-            case parse_validate_services_list(ServicesString) of
+            ?log_debug("validate_setup_services_post ServicesString: ~p", [ServicesString]),
+            ServicesStringWithMobile = ServicesString ++ ",mobile_service",
+            ?log_debug("validate_setup_services_post ServicesStringWithMobile: ~p", [ServicesStringWithMobile]),
+            case parse_validate_services_list(ServicesStringWithMobile) of
                 {ok, Svcs} ->
                     case lists:member(kv, Svcs) of
                         true ->
@@ -569,13 +572,14 @@ do_handle_add_node(Req, GroupUUID) ->
             Hostname = proplists:get_value(host, KV),
             Port = proplists:get_value(port, KV),
             Services = proplists:get_value(services, KV),
+            ServicesWithMobile = Services ++ [mobile_service],
             case ns_cluster:add_node_to_group(
                    Hostname, Port,
                    {User, Password},
                    GroupUUID,
-                   Services) of
+                   ServicesWithMobile) of
                 {ok, OtpNode} ->
-                    ns_audit:add_node(Req, Hostname, Port, User, GroupUUID, Services, OtpNode),
+                    ns_audit:add_node(Req, Hostname, Port, User, GroupUUID, ServicesWithMobile, OtpNode),
                     reply_json(Req, {struct, [{otpNode, OtpNode}]}, 200);
                 {error, unknown_group, Message, _} ->
                     reply_json(Req, [Message], 404);

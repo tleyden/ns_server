@@ -79,6 +79,7 @@
 -define(INDEXER_LOG_FILENAME, "indexer.log").
 -define(METAKV_LOG_FILENAME, "metakv.log").
 -define(FTS_LOG_FILENAME, "fts.log").
+-define(MOBILE_SERVICE_LOG_FILENAME, "mobile_service.log").
 -define(JSON_RPC_LOG_FILENAME, "json_rpc.log").
 -define(EVENTING_LOG_FILENAME, "eventing.log").
 -define(CBAS_LOG_FILENAME, "analytics_info.log").
